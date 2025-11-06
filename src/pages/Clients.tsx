@@ -16,7 +16,7 @@ const Clients = () => {
       email: "contact@techsolutions.com", 
       phone: "+33 1 23 45 67 89",
       address: "15 Rue de la Tech, 75001 Paris",
-      revenue: "145,000 €",
+      revenue: "200,000 €",
       invoices: 24,
       status: "Premium"
     },
