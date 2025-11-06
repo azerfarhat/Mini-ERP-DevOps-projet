@@ -15,7 +15,7 @@ const Employees = () => {
     { id: 3, name: "Julie Martin", role: "Chef de Projet", department: "Marketing", email: "julie@company.com", phone: "+33 6 34 56 78 90", status: "Actif" },
     { id: 4, name: "Thomas Bernard", role: "Comptable", department: "Finance", email: "thomas@company.com", phone: "+33 6 45 67 89 01", status: "Actif" },
     { id: 5, name: "Emma Petit", role: "Designer UI/UX", department: "Design", email: "emma@company.com", phone: "+33 6 56 78 90 12", status: "Actif" },
-    { id: 6, name: "Lucas Moreau", role: "Développeur", department: "IT", email: "lucas@company.com", phone: "+33 6 67 89 01 23", status: "En congé" },
+    { id: 6, name: "Walter White", role: "Développeur", department: "IT", email: "walter@white.com", phone: "+33 6 97 09 42 74", status: "En congé" },
   ]);
 
   const handleAddEmployee = (newEmployee: any) => {
