@@ -69,8 +69,20 @@ const Products = () => {
       status: "Disponible",
       trend: "+35%"
     },
+    // 🆕🆕 Nouveau produit ajoutééééééééé
+    { 
+      id: 7, 
+      name: "Pack Hébergement Cloud", 
+      category: "Infrastructure", 
+      price: "299 €/an",
+      stock: 80,
+      sales: 52,
+      status: "En stock",
+      trend: "+18%"
+    },
   ]);
 
+  // Fonction pour ajouter un produit (par le formulaire AddProductDialog)
   const handleAddProduct = (newProduct: any) => {
     setProducts([newProduct, ...products]);
   };
@@ -86,15 +98,20 @@ const Products = () => {
         }}
       />
 
+      {/* Fenêtre modale d’ajout de produit */}
       <AddProductDialog 
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onAdd={handleAddProduct}
       />
 
+      {/* Liste des produits */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
-          <Card key={product.id} className="shadow-card hover:shadow-elevated transition-all duration-300">
+          <Card 
+            key={product.id} 
+            className="shadow-card hover:shadow-elevated transition-all duration-300"
+          >
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -103,11 +120,15 @@ const Products = () => {
                 <Badge variant="secondary">{product.category}</Badge>
               </div>
 
-              <h3 className="font-bold text-lg text-foreground mb-2">{product.name}</h3>
+              <h3 className="font-bold text-lg text-foreground mb-2">
+                {product.name}
+              </h3>
               
               <div className="flex items-center gap-2 mb-4">
                 <DollarSign className="w-5 h-5 text-accent" />
-                <span className="text-2xl font-bold text-foreground">{product.price}</span>
+                <span className="text-2xl font-bold text-foreground">
+                  {product.price}
+                </span>
               </div>
 
               <div className="space-y-3 pb-4 border-b border-border">
@@ -131,11 +152,18 @@ const Products = () => {
               <div className="mt-4 flex items-center justify-between">
                 <Badge 
                   variant={product.status === "Stock bas" ? "destructive" : "default"}
-                  className={product.status === "En stock" ? "bg-green-100 text-green-700" : product.status === "Disponible" ? "bg-primary/10 text-primary" : ""}
+                  className={
+                    product.status === "En stock" 
+                      ? "bg-green-100 text-green-700" 
+                      : product.status === "Disponible" 
+                      ? "bg-primary/10 text-primary" 
+                      : ""
+                  }
                 >
                   {product.status === "Stock bas" && <AlertCircle className="w-3 h-3 mr-1" />}
                   {product.status}
                 </Badge>
+
                 <Button variant="ghost" size="sm">
                   Modifier
                 </Button>
