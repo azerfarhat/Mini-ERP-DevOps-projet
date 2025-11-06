@@ -12,7 +12,7 @@ const Dashboard = () => {
   ];
 
   const recentInvoices = [
-    { id: "INV-001", client: "Tech Solutions Inc", amount: "12,500 €", status: "Payée", date: "2025-11-05" },
+    { id: "INV-001", client: "Anypli", amount: "25,800 €", status: "Payée", date: "2025-11-20" },
     { id: "INV-002", client: "Digital Marketing Pro", amount: "8,300 €", status: "En attente", date: "2025-11-04" },
     { id: "INV-003", client: "Startup Innovate", amount: "15,700 €", status: "Payée", date: "2025-11-03" },
     { id: "INV-004", client: "Global Retail Ltd", amount: "22,100 €", status: "En attente", date: "2025-11-02" },
