@@ -11,11 +11,11 @@ const Clients = () => {
   const [clients, setClients] = useState([
     { 
       id: 1, 
-      name: "Tech Solutions Inc", 
-      industry: "Technologie", 
-      email: "contact@techsolutions.com", 
-      phone: "+33 1 23 45 67 89",
-      address: "15 Rue de la Tech, 75001 Paris",
+      name: "Anypli", 
+      industry: "Development", 
+      email: "contact@anypli.com", 
+      phone: "+21671968071",
+      address: "Sousse",
       revenue: "145,000 €",
       invoices: 24,
       status: "Premium"
