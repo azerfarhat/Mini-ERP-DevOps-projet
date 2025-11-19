@@ -1,23 +1,26 @@
-# Étape 1 : construire l'application
-FROM node:18 AS builder
+# --- STAGE 1: Build ---
+FROM node:18-alpine AS build
+
+# Définit le répertoire de travail
 WORKDIR /app
 
-# Copier les fichiers du projet
+# Copie les fichiers de dépendances et les installe
 COPY package*.json ./
 RUN npm install
 
+# Copie le reste du code source
 COPY . .
+
+# Lance la commande de build de Vite (qui crée un dossier /dist)
 RUN npm run build
 
-# Étape 2 : serveur nginx pour héberger le build
-FROM nginx:alpine
-WORKDIR /usr/share/nginx/html
+# --- STAGE 2: Serve ---
+FROM nginx:1.23-alpine
 
-# Nettoyer et copier le build
-RUN rm -rf ./*
-COPY --from=builder /app/dist .
-
-# Exposer le port
+# Expose le port 80
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# === CORRECTION ICI ===
+# Copie les fichiers du dossier /dist (créé par Vite)
+# dans le dossier par défaut où Nginx sert les fichiers
+COPY --from=build /app/dist /usr/share/nginx/html
