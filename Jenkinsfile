@@ -39,21 +39,6 @@ pipeline {
             }
         }
 
-        // STAGE 3: Construction de l'image Docker
-        stage('Install & Build') {
-            steps {
-                script {
-                    echo "Vérification de l'existence de 'dist' et construction si nécessaire..."
-                    // Sur les agents Windows, nous utilisons Docker pour exécuter un conteneur Node
-                    // qui montera le workspace et exécutera npm install && npm run build.
-                    // Cela évite d'exiger Node/npm installé sur l'agent.
-                    // Run the Node container as root to avoid permission issues when
-                    // mounting a Windows workspace into the Linux container.
-                    bat "if exist dist (echo dist exists) else (docker run --rm -u 0 -v %WORKSPACE%:/work -w /work node:18-alpine sh -c \"npm install --no-audit --no-fund && npm run build\")"
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
