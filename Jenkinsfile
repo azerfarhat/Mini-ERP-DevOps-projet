@@ -43,16 +43,17 @@ pipeline {
             }
         }
         stage('Smoke Test') {
-         steps {
+    steps {
         script {
             echo "Attente que le serveur Nginx démarre..."
             bat "ping -n 6 127.0.0.1 > NUL"
             
+            echo "Vérification que le titre de la page contient 'Mini ERP'..."
+            
             // === CORRECTION ICI ===
-            // On cherche le mot "React". Vérifiez que ce mot est bien dans votre titre
-            // dans le fichier index.html.
-            echo "Vérification du contenu de la page..."
-            bat "curl --silent --fail http://localhost:8088 | findstr Mini-ERP"
+            // On recherche la chaîne exacte "Mini ERP". Les guillemets sont nécessaires
+            // à cause de l'espace, et ils sont échappés avec \".
+            bat "curl --silent --fail http://localhost:8088 | findstr \"Mini ERP\""
             
             echo "Smoke Test PASS: Le serveur web répond et le contenu attendu est présent."
         }
