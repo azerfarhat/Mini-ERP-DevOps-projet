@@ -40,6 +40,18 @@ pipeline {
         }
 
         // STAGE 3: Construction de l'image Docker
+        stage('Install & Build') {
+            steps {
+                script {
+                    echo "Vérification de l'existence de 'dist' et construction si nécessaire..."
+                    // Sur les agents Windows, nous utilisons Docker pour exécuter un conteneur Node
+                    // qui montera le workspace et exécutera npm install && npm run build.
+                    // Cela évite d'exiger Node/npm installé sur l'agent.
+                    bat "if exist dist (echo dist exists) else (docker run --rm -v %WORKSPACE%:/work -w /work node:18-alpine sh -c \"npm install && npm run build\")"
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
@@ -58,11 +70,18 @@ pipeline {
         }
 
         // STAGE 5: Test de fumée (Smoke Test)
-          stage('Build Docker Image') {
+        stage('Smoke Test') {
             steps {
-                echo "Construction de l'image Docker React..."
-                // Ce build utilise le Dockerfile simplifié qui copie le dossier 'dist' local
-                bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
+                script {
+                    echo "Attente que le serveur Nginx démarre (10 secondes)..."
+                    // 'ping' est utilisé comme pause compatible avec Windows
+                    bat "ping -n 11 127.0.0.1 > nul"
+                    
+                    echo "Lancement du Smoke Test..."
+                    // Teste sur le port 8088 et cherche le titre de votre application
+                    // REMPLACEZ "Mini ERP" si le titre dans votre index.html est différent
+                    bat "curl http://localhost:8088 | find \"Mini ERP\""
+                }
             }
         }
 
