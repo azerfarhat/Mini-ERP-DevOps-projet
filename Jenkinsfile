@@ -34,7 +34,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
-                // Utilise 'bat' et les variables Windows (%VARIABLE%)
                 bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
             }
         }
@@ -42,7 +41,9 @@ pipeline {
         stage('Run Container for Test') {
             steps {
                 echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
-                bat "docker run -d --name %CONTAINER_NAME% -p 8080:80 %IMAGE_NAME%:%BUILD_TAG%"
+                // --- MODIFICATION ICI ---
+                // On utilise le port 8088 qui est probablement libre
+                bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
             }
         }
         // STAGE 5: Smoke Test
@@ -50,12 +51,12 @@ pipeline {
             steps {
                 script {
                     echo "Attente que le serveur Nginx démarre..."
-                    // 'timeout' est une commande Windows qui agit comme une pause
                     bat "timeout /t 10"
                     
                     echo "Lancement du Smoke Test..."
-                    // Utilise 'curl' (si installé) et 'find' pour Windows
-                    bat "curl http://localhost:8080 | find \"React App\""
+                    // --- MODIFICATION ICI ---
+                    // On teste sur le port 8088
+                    bat "curl http://localhost:8088 | find \"React App\""
                 }
             }
         }
@@ -63,9 +64,9 @@ pipeline {
         stage('Archive Artifacts') {
             steps {
                 echo "Archivage du build de l'application..."
-                // Suppose que Node.js/npm est installé sur la machine Windows
+                // Correction : le dossier est 'dist', pas 'build'
                 bat "npm install && npm run build"
-                archiveArtifacts artifacts: 'build/**/*', allowEmptyArchive: true
+                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
             }
         }
         // Stage conditionnel pour le build versionné
@@ -82,7 +83,6 @@ pipeline {
     post {
         always {
             echo "Nettoyage du conteneur de test..."
-            // Utilise '|| ver > nul' pour ignorer les erreurs si le conteneur n'existe pas
             bat "docker stop %CONTAINER_NAME% 2>nul || ver > nul"
             bat "docker rm %CONTAINER_NAME% 2>nul || ver > nul"
         }
