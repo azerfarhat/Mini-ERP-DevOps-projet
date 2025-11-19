@@ -77,6 +77,7 @@ pipeline {
         echo "Archivage du build..."
         // Archive le dossier 'dist' que nous venons de copier
         archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+        }
     }
         stage('Publish Versioned Build') {
             when {
