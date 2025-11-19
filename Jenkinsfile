@@ -60,14 +60,24 @@ pipeline {
     }
 }
         stage('Archive Artifacts') {
-            steps {
-                echo "Archivage du build de l'application..."
-                // Utilise 'bat' et les commandes Windows ('&&' fonctionne aussi)
-                bat 'npm install && npm run build'
-                // Utilise le bon dossier 'dist'
-                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
-            }
-        }
+    steps {
+        echo "Extraction des artefacts depuis l'image Docker..."
+        
+        // Crée un conteneur temporaire à partir de l'image que nous venons de construire
+        bat "docker create --name temp-extractor ${IMAGE_NAME}:${BUILD_TAG}"
+        
+        // Copie le dossier 'dist' depuis le conteneur vers le workspace Jenkins
+        // La syntaxe est "docker cp <nom_conteneur>:<chemin_dans_conteneur> <chemin_local>"
+        // Le '.' signifie "le répertoire actuel" (le workspace).
+        bat "docker cp temp-extractor:/app/dist ./"
+        
+        // Supprime le conteneur temporaire qui n'est plus utile
+        bat "docker rm temp-extractor"
+
+        echo "Archivage du build..."
+        // Archive le dossier 'dist' que nous venons de copier
+        archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+    }
         stage('Publish Versioned Build') {
             when {
                 tag "v*.*.*"
