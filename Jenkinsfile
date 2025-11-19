@@ -50,7 +50,7 @@ pipeline {
                     bat "ping -n 6 127.0.0.1 > NUL"
                     // 'curl' peut ne pas être installé. 'powershell' est plus sûr.
                     // Si curl est installé, vous pouvez utiliser : bat "curl --silent --fail http://localhost:8080 | findstr Vite"
-                    bat "powershell -Command \"(Invoke-WebRequest -Uri http://localhost:8080).Content | Select-String -Pattern 'Vite'\""
+                    bat "powershell -Command \"(Invoke-WebRequest -Uri http://localhost:8088).Content | Select-String -Pattern 'Vite'\""
                     echo "Smoke Test PASS: Le serveur web répond."
                 }
             }
