@@ -8,7 +8,6 @@ pipeline {
 
     stages {
 
-        /* ========= STAGE 1 : CHECKOUT ========= */
         stage('Checkout') {
             steps {
                 echo "Récupération du code..."
@@ -16,7 +15,6 @@ pipeline {
             }
         }
 
-        /* ========= STAGE 2 : SETUP ========= */
         stage('Setup') {
             steps {
                 script {
@@ -29,56 +27,50 @@ pipeline {
                     } else {
                         env.BUILD_TAG = "local-build-${env.BUILD_NUMBER}"
                     }
-                    echo "Le tag pour cette exécution sera : ${env.BUILD_TAG}"
+                    echo "BUILD TAG ➜ ${env.BUILD_TAG}"
                 }
             }
         }
 
-        /* ========= STAGE 3 : BUILD DOCKER ========= */
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} ."
+                bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
             }
         }
 
-        /* ========= STAGE 4 : RUN CONTAINER ========= */
         stage('Run Container for Test') {
             steps {
-                echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
-                sh "docker run -d --name ${CONTAINER_NAME} -p 8088:80 ${IMAGE_NAME}:${BUILD_TAG}"
+                echo "Démarrage du conteneur..."
+                bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
             }
         }
 
-        /* ========= STAGE 5 : SMOKE TEST ========= */
         stage('Smoke Test') {
             steps {
                 script {
-                    echo "Attente que le serveur démarre..."
-                    sh """
-                        sleep 5
-                        curl --silent --fail http://localhost:8088 | grep 'Mini ERP'
+                    echo "Test de la page web..."
+                    bat """
+                        timeout 5 >nul
+                        curl.exe -s -f http://localhost:8088 | findstr "Mini ERP"
                     """
-                    echo "Smoke Test PASS ✔"
                 }
             }
         }
 
-        /* ========= STAGE 6 : ARCHIVE ARTIFACTS ========= */
         stage('Archive Artifacts') {
             steps {
-                echo "Archivage du build (dossier dist)..."
+                echo "Archivage des artefacts..."
                 archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
             }
         }
     }
 
-    /* ========= POST ACTIONS ========= */
     post {
         always {
-            echo "Nettoyage du conteneur de test..."
-            sh "docker stop ${CONTAINER_NAME} || true"
-            sh "docker rm ${CONTAINER_NAME} || true"
+            echo "Nettoyage du conteneur..."
+            bat "docker stop %CONTAINER_NAME% 2>nul || ver > nul"
+            bat "docker rm %CONTAINER_NAME% 2>nul || ver > nul"
         }
     }
 }
