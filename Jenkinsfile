@@ -69,7 +69,7 @@ pipeline {
         // Copie le dossier 'dist' depuis le conteneur vers le workspace Jenkins
         // La syntaxe est "docker cp <nom_conteneur>:<chemin_dans_conteneur> <chemin_local>"
         // Le '.' signifie "le répertoire actuel" (le workspace).
-        bat "docker cp temp-extractor:/app/dist ./"
+        bat "docker cp temp-extractor:/usr/share/nginx/html ./dist"
         
         // Supprime le conteneur temporaire qui n'est plus utile
         bat "docker rm temp-extractor"
