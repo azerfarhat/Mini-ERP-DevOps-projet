@@ -35,14 +35,14 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
-                bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
+                bat """docker build -t ${IMAGE_NAME}:${BUILD_TAG} ."""
             }
         }
 
         stage('Run Container for Test') {
             steps {
                 echo "Démarrage du conteneur..."
-                bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
+                bat """docker run -d --name ${CONTAINER_NAME} -p 8088:80 ${IMAGE_NAME}:${BUILD_TAG}"""
             }
         }
 
@@ -58,19 +58,13 @@ pipeline {
             }
         }
 
-        stage('Archive Artifacts') {
-            steps {
-                echo "Archivage des artefacts..."
-                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
-            }
-        }
     }
 
     post {
         always {
             echo "Nettoyage du conteneur..."
-            bat "docker stop %CONTAINER_NAME% 2>nul || ver > nul"
-            bat "docker rm %CONTAINER_NAME% 2>nul || ver > nul"
+            bat "docker stop ${CONTAINER_NAME} 2>nul || ver > nul"
+            bat "docker rm ${CONTAINER_NAME} 2>nul || ver > nul"
         }
     }
 }

@@ -1,26 +1,23 @@
-# --- STAGE 1: Build ---
-
-FROM node:18-alpine AS build
-
-
+# Étape 1 : construire l'application
+FROM node:18 AS builder
 WORKDIR /app
 
-
-
+# Copier les fichiers du projet
 COPY package*.json ./
 RUN npm install
 
-
 COPY . .
-
-
 RUN npm run build
 
-# --- STAGE 2: Serve ---
+# Étape 2 : serveur nginx pour héberger le build
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
 
-FROM nginx:1.23-alpine
+# Nettoyer et copier le build
+RUN rm -rf ./*
+COPY --from=builder /app/dist .
 
-
+# Exposer le port
 EXPOSE 80
-# La seule ligne qui a changé est celle-ci :
-COPY --from=build /app/dist /usr/share/nginx/html
+
+CMD ["nginx", "-g", "daemon off;"]
