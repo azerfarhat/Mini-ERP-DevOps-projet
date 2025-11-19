@@ -5,9 +5,9 @@ pipeline {
     // Définit les outils à préparer avant de lancer les stages.
     // Jenkins va s'assurer que Node.js est disponible.
     tools {
-        // Le nom 'NodeJS-18' doit correspondre EXACTEMENT
+        // Le nom 'NodeJS' doit correspondre EXACTEMENT
         // au nom que vous avez configuré dans Administrer Jenkins > Tools
-        nodejs 'NodeJS-18' 
+        nodejs 'NodeJS' 
     }
 
     // Variables d'environnement utilisées dans tout le pipeline
