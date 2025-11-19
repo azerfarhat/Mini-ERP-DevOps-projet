@@ -1,14 +1,26 @@
-# --- STAGE UNIQUE : SERVIR LES FICHIERS ---
+# --- STAGE 1: Build ---
 
-# Utiliser une image Nginx légère et officielle
+FROM node:18-alpine AS build
+
+
+WORKDIR /app
+
+
+
+COPY package*.json ./
+RUN npm install
+
+
+COPY . .
+
+
+RUN npm run build
+
+# --- STAGE 2: Serve ---
+
 FROM nginx:1.23-alpine
 
-# Copier le contenu du dossier 'dist' (déjà construit par Jenkins)
-# dans le répertoire racine du serveur web Nginx
-COPY dist/ /usr/share/nginx/html
 
-# Exposer le port 80 pour les requêtes HTTP
 EXPOSE 80
-
-# Commande par défaut pour démarrer Nginx en premier plan lorsque le conteneur démarre
-CMD ["nginx", "-g", "daemon off;"]
+# La seule ligne qui a changé est celle-ci :
+COPY --from=build /app/dist /usr/share/nginx/html
