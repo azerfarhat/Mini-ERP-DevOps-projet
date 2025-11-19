@@ -9,7 +9,7 @@ pipeline {
         // STAGE 1: Checkout
         stage('Checkout') {
             steps {
-                echo "Récupération du code..."
+                echo "Récupération du code depuis GitHub..."
                 checkout scm
             }
         }
@@ -34,29 +34,28 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} ."
+                // Utilise 'bat' et les variables Windows (%VARIABLE%)
+                bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
             }
         }
         // STAGE 4: Run (Docker)
         stage('Run Container for Test') {
             steps {
                 echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
-                // On mappe le port 8080 de l'hôte au port 80 du conteneur Nginx
-                sh "docker run -d --name ${CONTAINER_NAME} -p 8080:80 ${IMAGE_NAME}:${BUILD_TAG}"
+                bat "docker run -d --name %CONTAINER_NAME% -p 8080:80 %IMAGE_NAME%:%BUILD_TAG%"
             }
         }
         // STAGE 5: Smoke Test
         stage('Smoke Test') {
             steps {
                 script {
-                    echo "Attente que le serveur Nginx démarre (très rapide)..."
-                    // Nginx est très rapide, une petite pause suffit souvent.
-                    // Mais une boucle reste plus robuste.
-                    sh """
-                        sleep 5 # Laisse le temps au conteneur de se stabiliser
-                        curl --silent --fail http://localhost:8080 | grep 'React App'
-                    """
-                    echo "Smoke Test PASS: Le serveur web répond et le contenu attendu est présent."
+                    echo "Attente que le serveur Nginx démarre..."
+                    // 'timeout' est une commande Windows qui agit comme une pause
+                    bat "timeout /t 10"
+                    
+                    echo "Lancement du Smoke Test..."
+                    // Utilise 'curl' (si installé) et 'find' pour Windows
+                    bat "curl http://localhost:8080 | find \"React App\""
                 }
             }
         }
@@ -64,11 +63,8 @@ pipeline {
         stage('Archive Artifacts') {
             steps {
                 echo "Archivage du build de l'application..."
-                // On ne peut pas archiver directement car le build est dans l'image.
-                // Une solution simple est de le recréer à l'extérieur.
-                // NOTE: Pour cela, l'agent Jenkins doit avoir Node.js installé.
-                // Une meilleure solution serait d'utiliser un agent Docker avec Node.
-                sh 'npm install && npm run build'
+                // Suppose que Node.js/npm est installé sur la machine Windows
+                bat "npm install && npm run build"
                 archiveArtifacts artifacts: 'build/**/*', allowEmptyArchive: true
             }
         }
@@ -79,12 +75,6 @@ pipeline {
             }
             steps {
                 echo "Ceci est un build de release pour le tag ${env.TAG_NAME}."
-                echo "Ici, on pourrait pousser l'image sur Docker Hub."
-                // Exemple pour pousser l'image :
-                // withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                //    sh "echo ${PASS} | docker login -u ${USER} --password-stdin"
-                //    sh "docker push ${IMAGE_NAME}:${env.TAG_NAME}"
-                // }
             }
         }
     }
@@ -92,8 +82,9 @@ pipeline {
     post {
         always {
             echo "Nettoyage du conteneur de test..."
-            sh "docker stop ${CONTAINER_NAME} || true"
-            sh "docker rm ${CONTAINER_NAME} || true"
+            // Utilise '|| ver > nul' pour ignorer les erreurs si le conteneur n'existe pas
+            bat "docker stop %CONTAINER_NAME% 2>nul || ver > nul"
+            bat "docker rm %CONTAINER_NAME% 2>nul || ver > nul"
         }
     }
 }
