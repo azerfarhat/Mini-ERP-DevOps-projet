@@ -47,7 +47,9 @@ pipeline {
                     // Sur les agents Windows, nous utilisons Docker pour exécuter un conteneur Node
                     // qui montera le workspace et exécutera npm install && npm run build.
                     // Cela évite d'exiger Node/npm installé sur l'agent.
-                    bat "if exist dist (echo dist exists) else (docker run --rm -v %WORKSPACE%:/work -w /work node:18-alpine sh -c \"npm install && npm run build\")"
+                    // Run the Node container as root to avoid permission issues when
+                    // mounting a Windows workspace into the Linux container.
+                    bat "if exist dist (echo dist exists) else (docker run --rm -u 0 -v %WORKSPACE%:/work -w /work node:18-alpine sh -c \"npm install --no-audit --no-fund && npm run build\")"
                 }
             }
         }
