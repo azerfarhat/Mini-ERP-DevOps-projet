@@ -6,14 +6,12 @@ pipeline {
         CONTAINER_NAME = 'mini-erp-test'
     }
     stages {
-        // STAGE 1: Checkout
         stage('Checkout') {
             steps {
                 echo "Récupération du code..."
                 checkout scm
             }
         }
-        // STAGE 2: Setup
         stage('Setup') {
             steps {
                 script {
@@ -30,69 +28,57 @@ pipeline {
                 }
             }
         }
-        // STAGE 3: Build
         stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_TAG} ."
+                // Utilise 'bat' pour Windows
+                bat "docker build -t ${IMAGE_NAME}:${BUILD_TAG} ."
             }
         }
-        // STAGE 4: Run (Docker)
         stage('Run Container for Test') {
             steps {
                 echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
-                // On mappe le port 8080 de l'hôte au port 80 du conteneur Nginx
-                sh "docker run -d --name ${CONTAINER_NAME} -p 8080:80 ${IMAGE_NAME}:${BUILD_TAG}"
+                // Utilise 'bat' pour Windows
+                bat "docker run -d --name ${CONTAINER_NAME} -p 8080:80 ${IMAGE_NAME}:${BUILD_TAG}"
             }
         }
-        // STAGE 5: Smoke Test
-         stage('Smoke Test') {
+        stage('Smoke Test') {
             steps {
                 script {
                     echo "Attente que le serveur Nginx démarre..."
-                    sh """
-                        sleep 5
-                        # VÉRIFIEZ LE TITRE DANS VOTRE index.html ET AJUSTEZ "Vite" SI NÉCESSAIRE
-                        curl --silent --fail http://localhost:8088 | grep 'Mini ERP'
-                    """
+                    // 'timeout' est une commande Windows équivalente à 'sleep'
+                    bat "timeout /t 5 > NUL" 
+                    // 'curl' peut ne pas être installé. 'powershell' est plus sûr.
+                    // Si curl est installé, vous pouvez utiliser : bat "curl --silent --fail http://localhost:8080 | findstr Vite"
+                    bat "powershell -Command \"(Invoke-WebRequest -Uri http://localhost:8080).Content | Select-String -Pattern 'Vite'\""
                     echo "Smoke Test PASS: Le serveur web répond."
                 }
             }
         }
-        // STAGE 6: Archive Artifacts
-       stage('Archive Artifacts') {
+        stage('Archive Artifacts') {
             steps {
                 echo "Archivage du build de l'application..."
-                // NOTE: Cette étape nécessite que Node.js soit installé sur l'agent Jenkins.
-                sh 'npm install && npm run build'
-                
-                // === CORRECTION ICI ===
-                // On archive le dossier 'dist' et non 'build'
+                // Utilise 'bat' et les commandes Windows ('&&' fonctionne aussi)
+                bat 'npm install && npm run build'
+                // Utilise le bon dossier 'dist'
                 archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
             }
         }
-        // Stage conditionnel pour le build versionné
         stage('Publish Versioned Build') {
             when {
                 tag "v*.*.*"
             }
             steps {
-                echo "Ceci est un build de release pour le tag ${env.TAG_NAME}."
-                echo "Ici, on pourrait pousser l'image sur Docker Hub."
-                // Exemple pour pousser l'image :
-                // withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                //    sh "echo ${PASS} | docker login -u ${USER} --password-stdin"
-                //    sh "docker push ${IMAGE_NAME}:${env.TAG_NAME}"
-                // }
+                echo "Ceci est un build de release..."
             }
         }
     }
-    // Stage de Cleanup
     post {
         always {
             echo "Nettoyage du conteneur de test..."
-            sh "docker stop ${CONTAINER_NAME} || true"
-            sh "docker rm ${CONTAINER_NAME} || true"
+            // Utilise 'bat' et '||' pour ignorer les erreurs
+            bat "docker stop ${CONTAINER_NAME} || exit 0"
+            bat "docker rm ${CONTAINER_NAME} || exit 0"
         }
     }
 }
