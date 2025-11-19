@@ -1,0 +1,21 @@
+# Dépendances Node, à ne jamais inclure dans le contexte de build
+node_modules
+
+# Dossier de build local (généré par 'npm run build' sur votre machine)
+# On le reconstruit proprement dans l'image Docker de toute façon
+dist
+
+# Fichiers de log et de debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dossier Git
+.git
+
+# Fichiers de configuration IDE
+.vscode
+.idea
+
+# Fichier d'environnement local (si vous en avez)
+.env
