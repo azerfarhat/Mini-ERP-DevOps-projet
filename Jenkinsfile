@@ -43,18 +43,19 @@ pipeline {
             }
         }
         stage('Smoke Test') {
-            steps {
-                script {
-                    echo "Attente que le serveur Nginx démarre..."
-                    // 'timeout' est une commande Windows équivalente à 'sleep'
-                    bat "ping -n 6 127.0.0.1 > NUL"
-                    // 'curl' peut ne pas être installé. 'powershell' est plus sûr.
-                    // Si curl est installé, vous pouvez utiliser : bat "curl --silent --fail http://localhost:8080 | findstr Vite"
-                    bat "powershell -Command \"(Invoke-WebRequest -Uri http://localhost:8088).Content | Select-String -Pattern 'Vite'\""
-                    echo "Smoke Test PASS: Le serveur web répond."
-                }
-            }
+        steps {
+        script {
+            echo "Attente que le serveur Nginx démarre..."
+            bat "ping -n 6 127.0.0.1 > NUL"
+            
+            // === CORRECTION ICI ===
+            // On essaie avec curl et findstr, qui sont plus standards que powershell dans certains PATH
+            bat "curl --silent --fail http://localhost:8088 | findstr Vite"
+            
+            echo "Smoke Test PASS: Le serveur web répond et le contenu attendu est présent."
         }
+    }
+}
         stage('Archive Artifacts') {
             steps {
                 echo "Archivage du build de l'application..."
