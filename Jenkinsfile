@@ -39,7 +39,7 @@ pipeline {
             steps {
                 echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
                 // Utilise 'bat' pour Windows
-                bat "docker run -d --name ${CONTAINER_NAME} -p 8080:80 ${IMAGE_NAME}:${BUILD_TAG}"
+                bat "docker run -d --name ${CONTAINER_NAME} -p 8088:80 ${IMAGE_NAME}:${BUILD_TAG}"
             }
         }
         stage('Smoke Test') {
