@@ -46,15 +46,15 @@ pipeline {
                 bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
             }
         }
-        // STAGE 5: Smoke Test
+       // STAGE 5: Smoke Test
         stage('Smoke Test') {
             steps {
                 script {
                     echo "Attente que le serveur Nginx démarre..."
-                    bat "timeout /t 10"
+                    // Utilise ping comme une pause robuste et compatible avec toutes les versions de Windows
+                    bat "ping -n 11 127.0.0.1 > nul"
                     
                     echo "Lancement du Smoke Test..."
-                    // --- MODIFICATION ICI ---
                     // On teste sur le port 8088
                     bat "curl http://localhost:8088 | find \"React App\""
                 }
