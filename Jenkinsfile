@@ -59,26 +59,37 @@ pipeline {
         }
     }
 }
-        stage('Archive Artifacts') {
+       stage('Archive Artifacts') {
     steps {
-        echo "Extraction des artefacts depuis l'image Docker..."
-        
-        // Crée un conteneur temporaire à partir de l'image que nous venons de construire
-        bat "docker create --name temp-extractor ${IMAGE_NAME}:${BUILD_TAG}"
-        
-        // Copie le dossier 'dist' depuis le conteneur vers le workspace Jenkins
-        // La syntaxe est "docker cp <nom_conteneur>:<chemin_dans_conteneur> <chemin_local>"
-        // Le '.' signifie "le répertoire actuel" (le workspace).
-        bat "docker cp temp-extractor:/usr/share/nginx/html ./dist"
-        
-        // Supprime le conteneur temporaire qui n'est plus utile
-        bat "docker rm temp-extractor"
+        script {
+            // Utilise un bloc 'try...finally' pour garantir le nettoyage
+            try {
+                echo "Extraction des artefacts depuis l'image Docker..."
 
-        echo "Archivage du build..."
-        // Archive le dossier 'dist' que nous venons de copier
-        archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+                // === AJOUT ICI : Nettoyage préventif ===
+                // Supprime un éventuel ancien conteneur pour éviter les conflits.
+                // '|| exit 0' ignore l'erreur si le conteneur n'existe pas.
+                bat "docker rm temp-extractor || exit 0"
+
+                // Crée le nouveau conteneur
+                bat "docker create --name temp-extractor ${IMAGE_NAME}:${BUILD_TAG}"
+                
+                // Copie les fichiers
+                bat "docker cp temp-extractor:/usr/share/nginx/html ./dist"
+                
+                // Archive les artefacts
+                echo "Archivage du build..."
+                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+
+            } finally {
+                // Ce bloc 'finally' s'exécutera TOUJOURS, que le 'try' réussisse ou échoue.
+                // Cela garantit que le conteneur est supprimé à la fin.
+                echo "Nettoyage du conteneur d'extraction..."
+                bat "docker rm temp-extractor || exit 0"
+            }
         }
     }
+}
         stage('Publish Versioned Build') {
             when {
                 tag "v*.*.*"
