@@ -56,7 +56,7 @@ pipeline {
                     
                     echo "Lancement du Smoke Test..."
                     // On teste sur le port 8088
-                    bat "curl http://localhost:8088 | find \"React App\""
+                    bat "curl http://localhost:8088 | find \"Mini ERP\""
                 }
             }
         }
