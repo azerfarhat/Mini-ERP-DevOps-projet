@@ -92,7 +92,7 @@ pipeline {
 }
         stage('Publish Versioned Build') {
             when {
-                tag "v*.*.*"
+                tag pattern: "v*.*.*", comparator: 'REGEXP'
             }
             steps {
                 echo "Ceci est un build de release..."
