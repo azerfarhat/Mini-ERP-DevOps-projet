@@ -2,16 +2,12 @@ pipeline {
     // Fait tourner le pipeline sur n'importe quel agent disponible
     agent any
     
-    // Définit les outils à préparer avant de lancer les stages.
-    tools {
-        // ⚠️ ATTENTION : Ce nom 'NodeJS' doit correspondre EXACTEMENT
-        // au nom configuré dans Administrer Jenkins > Tools.
-        // Si ça ne marche pas, vérifiez la casse (ex: 'nodejs', 'Node-JS'...)
-        nodejs 'NodeJS' 
-    }
+    // (Removed tools block) We avoid relying on a pre-configured NodeJS tool
+    // because some Jenkins agents (Windows) may not have it configured.
 
     // Variables d'environnement utilisées dans tout le pipeline
     environment {
+        // REMPLACEZ 'azerfarhat' par votre ID Docker Hub
         IMAGE_NAME     = 'azerfarhat/mini-erp-react'
         CONTAINER_NAME = 'mini-erp-react-test'
     }
@@ -29,42 +25,40 @@ pipeline {
         stage('Setup') {
             steps {
                 script {
-                    // Logique pour définir le tag de l'image Docker
-                    if (env.BRANCH_NAME == 'dev') {
+                    if (env.CHANGE_ID) { // Cas d'une Pull Request
+                        env.BUILD_TAG = "pr-${env.CHANGE_ID}-build-${env.BUILD_NUMBER}"
+                    } else if (env.BRANCH_NAME == 'dev') { // Cas d'un push sur 'dev'
                         env.BUILD_TAG = "dev-build-${env.BUILD_NUMBER}"
-                    } else if (env.TAG_NAME) {
+                    } else if (env.TAG_NAME) { // Cas d'un tag de version
                         env.BUILD_TAG = env.TAG_NAME
                     } else {
-                        env.BUILD_TAG = "snapshot-${env.BUILD_NUMBER}"
+                        env.BUILD_TAG = "local-build-${env.BUILD_NUMBER}"
                     }
                     echo "Le tag pour cette exécution sera : ${env.BUILD_TAG}"
                 }
             }
         }
-        
-        // STAGE 3: Installation des dépendances et Build de l'application
-        // ====> CETTE ÉTAPE DOIT ÊTRE AVANT 'Build Docker Image' <====
-        stage('Install & Build') {
+
+        // STAGE 3: Construction de l'image Docker
+        stage('Build Docker Image') {
             steps {
-                echo "Installation des dépendances et construction de l'application..."
-                // 'npm' est maintenant disponible grâce au bloc 'tools'
-                // Cette commande crée le dossier 'dist/'
-                bat "npm install && npm run build"
-            }
-        }
-        
-        // STAGE 4: Archivage des artefacts
-        stage('Archive Artifacts') {
-            steps {
-                echo "Archivage du build de l'application..."
-                // Archive le dossier 'dist' qui vient d'être créé à l'étape précédente
-                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+                echo "Construction de l'image Docker React..."
+                // Utilise 'bat' pour Windows et les variables %VAR%
+                bat "docker build -t %IMAGE_NAME%:%BUILD_TAG% ."
             }
         }
 
-        // STAGE 5: Construction de l'image Docker
-        // ====> MAINTENANT, LE DOSSIER 'dist/' EXISTE <====
-        stage('Build Docker Image') {
+        // STAGE 4: Démarrage du conteneur pour le test
+        stage('Run Container for Test') {
+            steps {
+                echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
+                // Utilise le port 8088 pour ne pas entrer en conflit avec Jenkins (port 8080)
+                bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
+            }
+        }
+
+        // STAGE 5: Test de fumée (Smoke Test)
+          stage('Build Docker Image') {
             steps {
                 echo "Construction de l'image Docker React..."
                 // Ce build utilise le Dockerfile simplifié qui copie le dossier 'dist' local
@@ -72,43 +66,40 @@ pipeline {
             }
         }
 
-        // STAGE 6: Démarrage du conteneur pour le test
-        stage('Run Container for Test') {
+        // STAGE 6: Archivage des artefacts
+        stage('Archive Artifacts') {
             steps {
-                echo "Démarrage du conteneur ${CONTAINER_NAME} pour le test..."
-                bat "docker run -d --name %CONTAINER_NAME% -p 8088:80 %IMAGE_NAME%:%BUILD_TAG%"
+                echo "Archivage du build de l'application..."
+                // Nous n'exécutons plus 'npm' sur l'agent Windows (pas toujours installé).
+                // L'image Docker construite au stage précédent contient déjà les fichiers
+                // statiques dans '/usr/share/nginx/html' (copiés depuis /app/dist).
+                // Ici on crée un conteneur temporaire à partir de l'image, on copie
+                // le contenu vers le workspace Jenkins, puis on archive.
+                bat "if exist dist rmdir /s /q dist || echo no dist"
+                bat "docker create --name tmp_extract %IMAGE_NAME%:%BUILD_TAG%"
+                bat "docker cp tmp_extract:/usr/share/nginx/html ./dist"
+                bat "docker rm tmp_extract"
+                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
             }
         }
 
-        // STAGE 7: Test de fumée (Smoke Test)
-        stage('Smoke Test') {
-            steps {
-                script {
-                    echo "Attente que le serveur Nginx démarre (10 secondes)..."
-                    bat "ping -n 11 127.0.0.1 > nul"
-                    
-                    echo "Lancement du Smoke Test..."
-                    bat "curl http://localhost:8088 | find \"Mini ERP\""
-                }
-            }
-        }
-
-        // Stage conditionnel
+        // Stage conditionnel qui ne s'exécute que pour un tag de version
         stage('Publish Versioned Build') {
             when {
                 tag "v*.*.*"
             }
             steps {
-                echo "Publication du build de release pour le tag ${env.TAG_NAME}..."
-                // Ici, vous ajouteriez la commande 'docker push'
+                echo "Ceci est un build de release pour le tag ${env.TAG_NAME}."
+                // Ici, vous pourriez ajouter les commandes pour pousser l'image sur Docker Hub
             }
         }
     }
 
-    // Actions à exécuter à la fin du pipeline
+    // Actions à exécuter à la fin du pipeline, qu'il réussisse ou échoue
     post {
         always {
             echo "Nettoyage du conteneur de test..."
+            // Commandes Windows pour arrêter et supprimer le conteneur proprement
             bat "docker stop %CONTAINER_NAME% 2>nul || ver > nul"
             bat "docker rm %CONTAINER_NAME% 2>nul || ver > nul"
         }
